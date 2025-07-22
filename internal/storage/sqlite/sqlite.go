@@ -53,7 +53,7 @@ func (s *Sqlite) CreateStudent(name, email string, age int) (int64, error) {
 }
 
 func (s *Sqlite) GetStudentById(id int64) (types.Student, error) {
-	stmt, err := s.Db.Prepare("SELECT id,name, email,age FROM  students WHERE ID = ? LIMIT 1")
+	stmt, err := s.Db.Prepare("SELECT id, name, email, age FROM  students WHERE ID = ? LIMIT 1")
 	if err != nil {
 		return types.Student{}, err
 	}
@@ -97,4 +97,44 @@ func (s *Sqlite) GetStudents() ([]types.Student, error) {
 		students = append(students, student)
 	}
 	return students, nil
+}
+
+func (s *Sqlite) UpdateStudent(email string, age int, id int64) (int64, error) {
+	stmt, err := s.Db.Prepare("UPDATE students SET email = ?, age = ? WHERE ID = ?")
+	if err != nil {
+		return 0, err
+	}
+	defer stmt.Close()
+
+	result, err := stmt.Exec(email, age, id)
+	if err != nil {
+		return 0, err
+	}
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return 0, err
+	}
+	if rowsAffected == 0 {
+		return 0, fmt.Errorf("no student found with ID %d", id)
+	}
+
+	return id, nil
+}
+
+func (s *Sqlite) DeleteStudent(id int64) (bool, error) {
+	stmt, err := s.Db.Prepare("DELETE FROM students WHERE ID = ?")
+	if err != nil {
+		return false, err
+	}
+	defer stmt.Close()
+	result, err := stmt.Exec(id)
+	if err != nil {
+		return false, err
+	}
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return false, err
+	}
+
+	return rowsAffected > 0, nil
 }
